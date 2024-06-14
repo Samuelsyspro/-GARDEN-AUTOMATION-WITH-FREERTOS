@@ -30,10 +30,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // //-----------------------------------------------------------------------
 
 // //------------------------------------------------------------------------
-//PARAMETROS DO APP
-#define APP_KEY "63d9ab40-e79f-465a-9b13-6f7df0575016"
-#define APP_SECRET "cb3c30a8-7b00-4f95-a6d9-70671c9ac65c-5d7b7194-55e8-4eda-a9b5-04fd82266e3f"
-#define TEMP_SENSOR_ID "66400d33fb874c7486d18587"
+//PARAMETROS DO APP SINRICPRO
+#define APP_KEY "YOUR APPKEY"
+#define APP_SECRET " YOUR APP_SECRET"
+#define TEMP_SENSOR_ID " YOUR SENSOR_ID"
 #define EVENT_WAIT_TIME 10000  // send event every 60 seconds
 // //------------------------------------------------------------------------
 //define pin dht11
@@ -151,9 +151,7 @@ void setup() {
     0);
 }
 
-//Task1code: le dht11
 void Taskdht11(void* pvParameters) {
-
   for (;;) {
     h = dht.readHumidity();
     t = dht.readTemperature();
@@ -171,42 +169,31 @@ void Taskdht11(void* pvParameters) {
   }
 }
 
-//Task2code: le o sensor de umidade do solo
 void TaskSolo(void* pvParameters) {
   for (;;) {
     int somatoria = 0;
-    //Realiza a leitura do sensor de acordo com a variavel "NUMERO_AMOSTRAS"
     for (int i = 1; i <= NUMERO_AMOSTRAS; i++) {
-      valor_analogico = analogRead(pino_sinal_analogico);  //Le o sensor
-      somatoria = somatoria + valor_analogico;             //Soma a variavel "somatoria" a leitura atual do sensor com seu valor anterior
-      float tensao = valor_analogico * (3.0 / 2048);       //Converte a leitura para tensao para referencia
+      valor_analogico = analogRead(pino_sinal_analogico);  
+      somatoria = somatoria + valor_analogico;            
+      float tensao = valor_analogico * (3.0 / 2048);       
     }
-    //Calcula a media das leituras utilizando a variavel "somatoria" e a variavel "NUMERO_AMOSTRAS"
+
     mediaSolo = somatoria / NUMERO_AMOSTRAS;
     Porcento = map(valor_analogico, 4095, 1300, 0, 100);
-    // Serial.println("");
-    // Serial.print("Media solo: ");
-    // Serial.println(mediaSolo);
-    // Serial.print("Percentual Solo ");
-    // Serial.println(Porcento);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
-//Task2code: le o sensor de umidade do solo
 void Taskchuva(void* pvParameters) {
   for (;;) {
     int somatoria = 0;
-    //Realiza a leitura do sensor de acordo com a variavel "NUMERO_AMOSTRAS"
     for (int i = 1; i <= NUMERO_AMOSTRAS; i++) {
-      valor_analogico_chuva = analogRead(pino_sinal_analogicoChuva);  //Le o sensor
-      somatoria = somatoria + valor_analogico_chuva;                  //Soma a variavel "somatoria" a leitura atual do sensor com seu valor anterior
-      float tensao = valor_analogico_chuva * (3.0 / 2048);            //Converte a leitura para tensao para referencia
+      valor_analogico_chuva = analogRead(pino_sinal_analogicoChuva);  
+      somatoria = somatoria + valor_analogico_chuva;                  
+      float tensao = valor_analogico_chuva * (3.0 / 2048);            
     }
     mediaChuva = somatoria / NUMERO_AMOSTRAS;
-    // Serial.print("Media chuva: ");
-    // Serial.println(mediaChuva);
-
+    
     if (mediaChuva >= 0 && mediaChuva < 200) {
       chuva = "Sem chuva";
     }
@@ -223,14 +210,9 @@ void Taskchuva(void* pvParameters) {
   }
 }
 
-//Task2code: le o sensor de luz
 void Taskcisterna(void* pvParameters) {
   for (;;) {
     valor_digital_cisterna = digitalRead(pinoboia);  //Le o sensor
-
-    // Serial.print("Estado Sensor: ");
-    // Serial.println(valor_digital_cisterna);
-
     if (valor_digital_cisterna == 1) {
       cisterna = "Sem Agua";
       digitalWrite(pinobuzzer, HIGH);
@@ -246,7 +228,6 @@ void Taskcisterna(void* pvParameters) {
 void OpenMeteoAPI(void* pvParameters) {
   for (;;) {
     printLocalTime();
-    // Serial.print("buffer: ");
     Serial.println(buffer);
     Serial.print("Horario api ");
     Serial.println(horarioAPI.c_str());
@@ -262,63 +243,40 @@ void OpenMeteoAPI(void* pvParameters) {
 void Irrigation(void* pvParameters) {
   for (;;) {
     digitalWrite(rele, LOW);
-    Serial.print("solo config: ");
-    Serial.println(percentualSolo);
-    Serial.print("Media solo real: ");
-    Serial.println(mediaSolo);
-    Serial.print("Percentual Solo real: ");
-    Serial.println(Porcento);
-    Serial.print("chuva config: ");
-    Serial.println(mediaLeituraSolo);
-    Serial.print("Media chuva real: ");
-    Serial.println(mediaChuva);
-    Serial.print("openmeteo parametro: ");
-    Serial.println(currentWeatherCode);
-    Serial.print("openmeteo confog: ");
-    Serial.println(currentWeatherCode);
-    Serial.print("openmeteo api atual: ");
-    Serial.println(current_weather_code); 
-    Serial.print("Horario 1 ");
-    Serial.println(horarioIrrigacao.c_str());
-    Serial.print("Horario 2 ");
-    Serial.println(horarioIrrigacaoTarde.c_str());
     if ((strcmp(buffer, horarioIrrigacao.c_str()) == 0 || strcmp(buffer, horarioIrrigacaoTarde.c_str()) == 0) && valor_digital_cisterna == 0) {
       bool conditionsIrrig = true;
-      while (conditionsIrrig) {  // Continue enquanto as condições forem atendidas
+      while (conditionsIrrig) {  
         unsigned long start_time = millis();
-
-        // Loop for the duration of tempIrrigacao
         for (unsigned long current_time = millis(); current_time - start_time < tempIrrigacao; current_time = millis()) {
           if (valor_digital_cisterna == 0 && Porcento < percentualSolo && mediaChuva < mediaLeituraSolo && current_weather_code <= currentWeatherCode) {
             digitalWrite(rele, HIGH);
             Serial.print("irrigando ");
           } else {
             digitalWrite(rele, LOW);
-            conditionsIrrig = false;  // Marque que as condições não foram atendidas
-            break;                    // Saia do loop for
+            conditionsIrrig = false;  
+            break;                   
           }
         }
 
         if (conditionsIrrig) {
-          start_time = millis();  // Reiniciar o tempo
-          // Verificação adicional usando for para a duração de tempIrrigacao
+          start_time = millis();  
           for (unsigned long current_time = millis(); current_time - start_time < tempIrrigacao; current_time = millis()) {
             if (valor_digital_cisterna == 0 && t > 28 && h < 60 && mediaSolo < 40) {
               digitalWrite(rele, HIGH);
             } else {
               digitalWrite(rele, LOW);
-              conditionsIrrig = false;  // Marque que as condições não foram atendidas
-              break;                    // Saia do loop for
+              conditionsIrrig = false;  
+              break;                    
             }
           }
         }
 
         if (!conditionsIrrig) {
-          break;  // Se as condições não foram atendidas, saia do loop infinito
+          break;  
         }
       }
     }
-    vTaskDelay(1000 / portTICK_PERIOD_MS);  // Wait for 1 second before checking again
+    vTaskDelay(1000 / portTICK_PERIOD_MS);  
   }
 }
 
@@ -364,12 +322,9 @@ void loop() {
   SinricPro.handle();
   handleTemperaturesensor();
 }
-//--------------------------------------------------
-//mostra info no display
-//--------------------------------------------------
+
 void Display(void) {
   display.clearDisplay();
-
   display.setTextSize(2);               // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE);  // Draw white text
   display.setCursor(0, 0);
@@ -386,16 +341,13 @@ void Display(void) {
   display.println(F("*C"));
   display.display();
   delay(2000);
-  // Limpar a tela antes de imprimir o valor 3.141592
   display.clearDisplay();
-
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.println(chuva);
   display.println(F("Cisterna:"));
   display.print(cisterna);
-
   display.display();
   delay(2000);
 }
