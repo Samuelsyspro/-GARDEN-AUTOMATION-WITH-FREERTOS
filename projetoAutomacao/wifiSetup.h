@@ -8,8 +8,8 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 
-const char* ssid = "TP-Link_7DA6";
-const char* password = "03720158";
+const char* ssid = "******";
+const char* password = "********";
 
 WebServer server(80);
 // Parametros iniciais irrigação
