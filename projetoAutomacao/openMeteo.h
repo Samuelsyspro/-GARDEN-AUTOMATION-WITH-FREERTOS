@@ -7,8 +7,8 @@ String Parameters = "&current=temperature_2m,relative_humidity_2m,precipitation,
 
 
 // Replace with your location Credentials
-String lat = "27.0964";
-String lon = "-52.6183";
+String lat = "";
+String lon = "";
 String descricao = "";
 
 int current_weather_code = 0;
